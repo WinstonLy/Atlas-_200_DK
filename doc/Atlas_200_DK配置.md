@@ -758,7 +758,7 @@ service NetworkManager restart
 
 1. 将Atlas 200 DK开发者板升级包“mini_developerkit-xxx.rar”以MindSpore Studio安装用户上传到MindSpore Studio服务器任一目录下，并进入此目录。
 
-2. 以Mind Studio安装用户进入存放开发者板升级包的目录，并在当前目录下以HwHiAiUser用户SSH登录到开发者板，然后切换到root用户。
+2. 以Mind Studio安装用户进入存放开发者板升级包的目录，并在当前目录下以HwHiAiUser用户SSH登录到开发者板，然后切换到root用户。进入root密码为Mind@123
 
    **ssh HwHiAiUser@192.168.1.2**
 
