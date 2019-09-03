@@ -884,9 +884,8 @@ Runtime：运行于APP进程空间，为APP提供了Ascend 310设备的Memory管
 
 ​		这是因为Ubuntu16.04依赖库版本不支持，需要自己下载libssl1.1及以上版本。
 
-​		下载链接：https://packages.ubuntu.com/disco/amd64/libssl1.1/download
-                推荐方法：sudo apt-get update
-		         sudo apt-get install libssl1.1
+​		下载链接：https://ubuntu.pkgs.org/18.04/ubuntu-main-amd64/libssl1.1_1.1.0g-2ubuntu4_amd64.deb.html
+             
 
 #### 1.3 在验证的时候总是出现验证失败，输出信息如下：
 
