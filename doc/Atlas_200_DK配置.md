@@ -10,7 +10,7 @@ Ascend 310是一款华为专门为图像识别、视频处理、推理计算及�
 
 Atlas 200 DK系统框图	如下所示，其中Atlas 200 DK开发者板主要包含Hi3559 Camera模块以及Atlas 200 AI加速模	块，开发工具MindSpore Studio所在PC通过USB接口或者网线与Atlas 200 DK开发者板连接。
 
-![](/home/winston/图片/atlas_200_dk/Atlas_200_DK系统框图.png)
+![](/home/winston/workspace/Atlas_200_DK/image/Atlas_200_DK系统框图.png)
 
 ### 2. 产品特点
 
@@ -22,7 +22,7 @@ Atlas 200 DK系统框图	如下所示，其中Atlas 200 DK开发者板主要包�
 
 ### 3. 产品规格
 
-![](/home/winston/图片/atlas_200_dk/基本规格.png)
+![](/home/winston/workspace/Atlas_200_DK/image/基本规格.png)
 
 ### 4. MindSpore Studio简介
 
@@ -46,7 +46,7 @@ MindSpore Studio是一套基于华为NPU（Neural-network Processing Unit）开�
 
   开发流程如下图所示：
 
-![](/home/winston/图片/atlas_200_dk/开发流程.png)
+![](/home/winston/workspace/Atlas_200_DK/image/开发流程.png)
 
 ## 二 MindSpore Studio工具部署
 
@@ -595,7 +595,7 @@ bash stop.sh
 
 ### 1. 简介
 
-​	本文描述了用户在使用Atlas 200 Developer Kit（Atlas 200 DK）运行AI应用程序前的准备工作，包括系统SD卡的制	 	作，通过MindSpore Studio进行Atlas 200 Developer Kit开发者板基本信息的管理以及MindSpore Studio中交叉编译环	境的配置等。
+​	本文描述了用户在使用Atlas 200 Developer Kit（Atlas 200 DK）运行AI应用程序前的准备工作，包括系统SD卡的制作，通过MindSpore Studio进行Atlas 200 Developer Kit开发者板基本信息的管理以及MindSpore Studio中交叉编译环	境的配置等。
 
 ### 2. 单板使用注意事项
 
@@ -607,7 +607,7 @@ bash stop.sh
 
 ### 3. 使用流程
 
-![](/home/winston/图片/atlas_200_dk/使用流程.png)
+![](/home/winston/workspace/Atlas_200_DK/image/使用流程.png)
 
 ​	注：本流程是发货时无SD卡的使用流程，如果发货时带SD卡，请从Atlas 200 DK开发者板上电开始使用。
 
@@ -830,13 +830,13 @@ MindSpore Studio的Matrix流程编排功能提供AI引擎可视化拖拽式编�
 
 编排流程可见下图：
 
-![](/home/winston/图片/atlas_200_dk/编排流程.png)
+![](/home/winston/workspace/Atlas_200_DK/image/编排流程.png)
 
 ### 3.Atlas场景软件架构
 
 Atlas 200 DK场景Matrix逻辑架构如图：
 
-![](/home/winston/图片/atlas_200_dk/Atlas场景软件架构.png)
+![](/home/winston/workspace/Atlas_200_DK/image/Atlas场景软件架构.png)
 
 
 
@@ -870,7 +870,100 @@ Runtime：运行于APP进程空间，为APP提供了Ascend 310设备的Memory管
 - 多APP，每个APP单线程：多APP各自启动一个线程，由线程各自发起推理任务。
 - 多APP，每个APP多线程：多APP各自启动多个线程，由线程各自发起推理任务。
 
-## 五，FAQ
+## 五，算子开发
+
+在将caffe和tensorflow开源框架模型转化为Ascend 310支持的模型时，如果模型中的算子在系统内置的算子库中未实现，则需要用户自己定义未实现的算子。
+
+提供了工具TE（Tensor Engine）来进行自定义算子开发。将开发好的算子插件加载到模型中进行模型转化，并应用到程序开发中。
+
+### 1. 算子开发注意事项
+
+- SSD网络中的PriorBox算子与Detection Output算子模型转换时会自动融合。需要用户删除网络模型文件中的Detection Output算子。
+- 不要修改框架内置算子的实现（路径：ddk/include/inc/custom下的所有文件）
+- 当前版本不支持多输入自定义算子的开发
+
+### 2. 主要流程
+
+1. 创建算子工程
+
+2. 自定义未实现的算子
+3. 开发算子插件，将算子注册到Framework中，编译插件，生成自定义算子的.so插件文件
+4. 再次进行模型转换时，加载插件文件才能识别自定义算子
+5. 用加载插件后的网络模型进行验证
+
+## 六，应用移植
+
+### 1 GPU与Ascend 310 Mini平台算法框架差异
+
+GPU平台
+
+由GPU完成Crop/Resize处理、YUV2RGB转换，并进行Scale和减均值处理，执行离线模型推理。推理的结果在CPU做后处理和输出。
+
+Ascend 310平台
+
+通过Matrix将待处理数据从host侧发送到device（Ascend 310芯片），在device完成所有处理。DVPP子系统实现Crop/Resize，AI子系统完成YUV2RGB、Scale、减均值和神经网络推理，Control CPU实现后处理。
+
+算法移植流程
+
+- 环境准备及工具安装：包括下载软件包、准备需要移植的代码、安装工具等。
+- 工程创建及代码导入：创建工程、导入代码。
+- 算法移植修改：移植过程中需要修改的关键代码。
+- 平台编译和调试：算法修改完成后，进行动态库和可执行文件的编译和调试。
+
+### 2 算法模块修改
+
+#### 2.1 GPU代码移植修改
+
+GPU内存处理的函数修改为C或C++函数
+
+需要把Cuda的内存管理的函数如：cudaMalloc()，cudaMemset()，cudaFree()，cudaMemcpy()替换为C语言的接口或C++语言的接口。
+
+- C语言的接口：malloc()，meset_s()，free()，memcpy_s()
+- C++语言的接口：new，meset_s()，delete，memcpy_s()
+
+
+
+GPU的Crop和Resize接口替换为VPC函数接口
+
+图像的Crop或Resize的GPU处理接口，需要替换为VPC函数的接口，详见[VPC函数接口说明](https://ascend.huawei.com/documentation/details/zh/1.3.0.0/f4f39edd90e011e9a97afa163e714aa5/zh-cn_topic_0160784065.html)
+
+
+
+GPU的网络模型处理修改为AI网络模型子系统处理
+
+需要将模型的初始化，内存处理，模型输入输出的逻辑处理统一切换为Ascend 310平台AI网络模型子系统的处理方式。详细的接口说明，请参见[AI网络模型子系统函数接口](https://ascend.huawei.com/documentation/details/zh/1.3.0.0/f4f39edd90e011e9a97afa163e714aa5/zh-cn_topic_0160784060.html)。
+
+
+
+#### 2.2 算法模块的Matrix封装
+
+算法移植到Ascend 310平台时需要进行Matrix封装，以适配Matrix框架。
+
+算法移植到Ascend 310平台时，通常以算法模块为粒度，通过IDE或手工编码的方式进行接口封装，每个算法模块封装为一个Engine。每个Engine需要实现算法模块的Init()接口和Process()接口，其中Matrix框架会在系统启动时调用一次Init()，进行Engine的参数初始化、内存分配、模型加载。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## FAQ
 
 ### 1. MindSpore Studio部署问题
 
@@ -885,7 +978,7 @@ Runtime：运行于APP进程空间，为APP提供了Ascend 310设备的Memory管
 ​		这是因为Ubuntu16.04依赖库版本不支持，需要自己下载libssl1.1及以上版本。
 
 ​		下载链接：https://ubuntu.pkgs.org/18.04/ubuntu-main-amd64/libssl1.1_1.1.0g-2ubuntu4_amd64.deb.html
-             
+​             
 
 #### 1.3 在验证的时候总是出现验证失败，输出信息如下：
 
@@ -913,8 +1006,8 @@ Runtime：运行于APP进程空间，为APP提供了Ascend 310设备的Memory管
 
 #### 	3.1运行Resnet编译成功，run成功，但是无法查看分类结果，输出如下：
 
-![image result](/home/winston/图片/atlas_200_dk/iamge result fail.png)
+![image result](/home/winston/workspace/Atlas_200_DK/image/iamge result fail.png)
 
-![statistical result fail](/home/winston/图片/atlas_200_dk/statistical result fail.png)
+![statistical result fail](/home/winston/workspace/Atlas_200_DK/image/statistical result fail.png)
 
 ​	这是因为MIndSpore Studio和atlas 200dk开发板版本不一样导致的结果，需要进行升级到同一版本。升级操作看版本升	级介绍。
